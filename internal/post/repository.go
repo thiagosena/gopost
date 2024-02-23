@@ -4,8 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/jackc/pgx/v4"
 	"time"
+
+	"github.com/jackc/pgx/v4"
 
 	"github.com/google/uuid"
 	"github.com/thiagosena/gopost/internal"
@@ -17,20 +18,24 @@ type Repository struct {
 	Conn *pgxpool.Pool
 }
 
-func (r *Repository) Insert(post internal.Post) error {
+func (r *Repository) Insert(post internal.Post) (internal.Post, error) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	fmt.Println(r.Conn)
 
-	_, err := r.Conn.Exec(
+	err := r.Conn.QueryRow(
 		ctx,
-		"INSERT INTO posts (username, body) VALUES ($1, $2)",
+		"INSERT INTO posts (username, body) VALUES ($1, $2) RETURNING id",
 		post.Username,
-		post.Body)
+		post.Body).Scan(&post.ID)
 
-	return err
+	if err != nil {
+		return internal.Post{}, err
+	}
+
+	return post, nil
 }
 
 func (r *Repository) Delete(id uuid.UUID) error {
@@ -77,7 +82,7 @@ func (r *Repository) FindAll() (internal.Post, error) {
 	var post internal.Post
 	err := r.Conn.QueryRow(
 		ctx,
-		"SELECT username, body, created_at FROM posts",
+		"SELECT id, username, body, created_at FROM posts",
 	).Scan(&post.Username, &post.Body, &post.CreatedAt)
 
 	if errors.Is(err, pgx.ErrNoRows) {

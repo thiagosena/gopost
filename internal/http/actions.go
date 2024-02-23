@@ -31,14 +31,15 @@ func CreatePosts(ctx *gin.Context) {
 		return
 	}
 
-	if err := service.Create(dto); err != nil {
+	response, err := service.Create(dto)
+	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
 		})
 		return
 	}
 
-	ctx.JSON(http.StatusCreated, nil)
+	ctx.JSON(http.StatusCreated, response)
 }
 
 func DeletePosts(ctx *gin.Context) {
@@ -87,7 +88,7 @@ func GetPosts(ctx *gin.Context) {
 }
 
 func GetAllPosts(ctx *gin.Context) {
-	p, err := service.FindAll()
+	posts, err := service.FindAll()
 	if err != nil {
 		statusCode := http.StatusInternalServerError
 		if errors.Is(err, post.ErrPostNotFound) {
@@ -100,5 +101,5 @@ func GetAllPosts(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, p)
+	ctx.JSON(http.StatusOK, gin.H{"posts": posts})
 }

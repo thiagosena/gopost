@@ -16,13 +16,13 @@ type Service struct {
 	Repository Repository
 }
 
-func (service Service) Create(post internal.Post) error {
+func (service Service) Create(post internal.Post) (internal.Post, error) {
 	if post.Body == "" {
-		return ErrPostBodyEmpty
+		return internal.Post{}, ErrPostBodyEmpty
 	}
 
 	if utf8.RuneCountInString(post.Body) > 140 {
-		return ErrPostBodyExceedsLimit
+		return internal.Post{}, ErrPostBodyExceedsLimit
 	}
 
 	return service.Repository.Insert(post)
